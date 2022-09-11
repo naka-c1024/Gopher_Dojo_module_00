@@ -76,7 +76,7 @@ func myWalk(dirname string) {
 			return nil
 		})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s: no such file or directory\n", dirname)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
