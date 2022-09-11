@@ -17,6 +17,10 @@ type ErrMsg string
 
 func isDir(directory string) bool {
 	fInfo, _ := os.Stat(directory)
+	if fInfo == nil {
+		fmt.Fprintf(os.Stderr, "error: %s: no such file or directory\n", directory)
+		os.Exit(1)
+	}
 	if fInfo.IsDir() == false {
 		return false
 	}
