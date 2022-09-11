@@ -1,6 +1,7 @@
 package mypkg
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -10,14 +11,12 @@ import (
 	"strings"
 )
 
-func Do() {
-	fmt.Println("hello world")
-}
+type ErrMsg string
 
 func isDir(directory string) bool {
 	fInfo, _ := os.Stat(directory)
 	if fInfo.IsDir() == false {
-		return false //It's file
+		return false
 	}
 	return true
 }
@@ -30,33 +29,30 @@ func isPng(str string) bool {
 	}
 }
 
-func check_error(err error, msg string) {
+func checkError(err error, msg ErrMsg) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", msg, err)
+		fmt.Fprintf(os.Stderr, "%v: %v\n", msg, err)
 		os.Exit(1)
 	}
 }
 
-func Jpg_to_png(path string) {
+func jpgToPng(path string) {
 	file, err := os.Open(path)
-	check_error(err, "open")
+	checkError(err, "open")
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
-	check_error(err, "decode")
+	checkError(err, "decode")
 
 	png_file := strings.Replace(path, "jpg", "png", -1)
 	out, err := os.Create(png_file)
-	check_error(err, "create")
+	checkError(err, "create")
 	defer out.Close()
 
-	// 画像ファイル出力
-	//    jpeg.Encode(out, img, nil)
 	png.Encode(out, img)
 }
 
-// JPGファイルを探し出す
-func MyWalk(dirname string) {
+func myWalk(dirname string) {
 	if isDir(dirname) == false {
 		fmt.Fprintf(os.Stderr, "error: %s is not directory\n", dirname)
 		os.Exit(0)
@@ -67,7 +63,7 @@ func MyWalk(dirname string) {
 				return err
 			}
 			if filepath.Ext(path) == ".jpg" {
-				Jpg_to_png(path)
+				jpgToPng(path)
 			} else if isDir(path) == false && isPng(path) == false {
 				fmt.Fprintf(os.Stderr, "error: %s is not a valid file\n", path)
 			}
@@ -76,5 +72,18 @@ func MyWalk(dirname string) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s: no such file or directory\n", dirname)
 		os.Exit(1)
+	}
+}
+
+func Convert() {
+	flag.Parse()
+	if dirname := flag.Arg(0); dirname == "" {
+		fmt.Fprintf(os.Stderr, "error: invalid argument\n")
+		os.Exit(0)
+	} else if flag.Arg(1) != "" {
+		fmt.Fprintf(os.Stderr, "error: multiple arguments\n")
+		os.Exit(0)
+	} else {
+		myWalk(dirname)
 	}
 }
