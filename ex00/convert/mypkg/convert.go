@@ -1,3 +1,4 @@
+// mypkg は自作パッケージです。
 package mypkg
 
 import (
@@ -11,6 +12,7 @@ import (
 	"strings"
 )
 
+// ErrMsg はエラーメッセージを表すユーザー定義型です。
 type ErrMsg string
 
 func isDir(directory string) bool {
@@ -75,6 +77,7 @@ func myWalk(dirname string) {
 	}
 }
 
+// Convert は.jpgファイルを.pngファイルに変換する関数です。
 func Convert() {
 	flag.Parse()
 	if dirname := flag.Arg(0); dirname == "" {
