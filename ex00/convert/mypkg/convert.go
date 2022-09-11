@@ -57,6 +57,10 @@ func Jpg_to_png(path string) {
 
 // JPGファイルを探し出す
 func MyWalk(dirname string) {
+	if isDir(dirname) == false {
+		fmt.Fprintf(os.Stderr, "error: %s is not directory\n", dirname)
+		os.Exit(0)
+	}
 	err := filepath.Walk(dirname,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
