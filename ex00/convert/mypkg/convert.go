@@ -24,31 +24,6 @@ func IsPng(path string) bool {
 	}
 }
 
-// CheckError はerrorが生じた際にその内容を出力しプログラムを終了する関数です。
-func CheckError(err error, msg ErrMsg) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v: %v\n", msg, err)
-		os.Exit(1)
-	}
-}
-
-// JpgToPng は.jpgファイルから.pngファイルに変換する関数です。
-func JpgToPng(path string) {
-	file, err := os.Open(path)
-	CheckError(err, "open")
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-	CheckError(err, "decode")
-
-	png_file := strings.Replace(path, "jpg", "png", -1)
-	out, err := os.Create(png_file)
-	CheckError(err, "create")
-	defer out.Close()
-
-	png.Encode(out, img)
-}
-
 // TrimSpaceLeft はエラーメッセージにおいて不要なスペースから左部分を除く関数です。
 func TrimSpaceLeft(err error) string {
 	str := err.Error()
@@ -57,6 +32,31 @@ func TrimSpaceLeft(err error) string {
 		return str
 	}
 	return str[spaceIndex+1:]
+}
+
+// CheckError はerrorが生じた際にその内容を出力しプログラムを終了する関数です。
+func CheckError(err error, msg ErrMsg, path string) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s: %v: %v\n", path, msg, TrimSpaceLeft(err))
+		os.Exit(1)
+	}
+}
+
+// JpgToPng は.jpgファイルから.pngファイルに変換する関数です。
+func JpgToPng(path string) {
+	file, err := os.Open(path)
+	CheckError(err, "open", path)
+	defer file.Close()
+
+	img, _, err := image.Decode(file)
+	CheckError(err, "decode", path)
+
+	png_file := strings.Replace(path, "jpg", "png", -1)
+	out, err := os.Create(png_file)
+	CheckError(err, "create", path)
+	defer out.Close()
+
+	png.Encode(out, img)
 }
 
 // FindJpg は.jpgファイルを探す関数です。
