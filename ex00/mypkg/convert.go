@@ -15,13 +15,11 @@ import (
 // ErrMsg はエラーメッセージを表すユーザー定義型です。
 type ErrMsg string
 
+var exitStatus int
+
 // IsPng は.pngファイルかどうかbool値で返す関数です。
 func IsPng(path string) bool {
-	if ext := filepath.Ext(path); ext == ".png" {
-		return true
-	} else {
-		return false
-	}
+	return filepath.Ext(path) == ".png"
 }
 
 // TrimSpaceLeft はエラーメッセージにおいて不要なスペースから左部分を除く関数です。
@@ -34,52 +32,61 @@ func TrimSpaceLeft(err error) string {
 	return str[spaceIndex+1:]
 }
 
-// CheckError はerrorが生じた際にその内容を出力しプログラムを終了する関数です。
-func CheckError(err error, msg ErrMsg, path string) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s: %v: %v\n", path, msg, TrimSpaceLeft(err))
-		os.Exit(1)
-	}
-}
-
-// JpgToPng は.jpgファイルから.pngファイルに変換する関数です。
-func JpgToPng(path string) {
+// JPGtoPng は.jpgファイルから.pngファイルに変換する関数です。
+func JPGtoPng(path string) error {
 	file, err := os.Open(path)
-	CheckError(err, "open", path)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
-	CheckError(err, "decode", path)
+	if err != nil {
+		return err
+	}
 
-	png_file := strings.Replace(path, "jpg", "png", -1)
-	out, err := os.Create(png_file)
-	CheckError(err, "create", path)
-	defer out.Close()
+	var pngFile string
+	switch filepath.Ext(path) {
+	case ".jpg":
+		pngFile = strings.TrimSuffix(path, ".jpg") + ".png"
+	case ".jpeg":
+		pngFile = strings.TrimSuffix(path, ".jpeg") + ".png"
+	}
+	out, err := os.Create(pngFile)
+	if err != nil {
+		return err
+	}
 
-	png.Encode(out, img)
+	err = png.Encode(out, img)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// FindJpg は.jpgファイルを探す関数です。
-func FindJpg(dirname string) {
-	if _, err := os.Stat(dirname); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", TrimSpaceLeft(err))
-		os.Exit(1)
-	}
+// FindJPG は.jpgファイルを探す関数です。
+func FindJPG(dirname string) {
 	err := filepath.Walk(dirname,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			if filepath.Ext(path) == ".jpg" {
-				JpgToPng(path)
+			if filepath.Ext(path) == ".jpg" || filepath.Ext(path) == ".jpeg" {
+				err = JPGtoPng(path)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "error: %s: %s\n", path, err.Error())
+					exitStatus = 1
+				}
 			} else if info.IsDir() == false && IsPng(path) == false {
 				fmt.Fprintf(os.Stderr, "error: %s is not a valid file\n", path)
+				exitStatus = 1
 			}
 			return nil
 		})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", TrimSpaceLeft(err))
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		exitStatus = 1
 	}
 }
 
@@ -88,11 +95,15 @@ func Convert() {
 	flag.Parse()
 	if dirname := flag.Arg(0); dirname == "" {
 		fmt.Fprintf(os.Stderr, "error: invalid argument\n")
-		os.Exit(0)
-	} else if flag.Arg(1) != "" {
-		fmt.Fprintf(os.Stderr, "error: multiple arguments\n")
-		os.Exit(0)
-	} else {
-		FindJpg(dirname)
+		os.Exit(1)
 	}
+	for i := 0; flag.Arg(i) != ""; i++ {
+		if _, err := os.Stat(flag.Arg(i)); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", TrimSpaceLeft(err))
+			exitStatus = 1
+			continue
+		}
+		FindJPG(flag.Arg(i))
+	}
+	os.Exit(exitStatus)
 }
