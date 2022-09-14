@@ -12,8 +12,13 @@ import (
 	"strings"
 )
 
-// ErrMsg はエラーメッセージを表すユーザー定義型です。
-type ErrMsg string
+// MyError はユーザー定義型です。
+type MyError string
+
+func (e MyError) Error() string {
+	// return string(e.Error())
+	return string(e)
+}
 
 var exitStatus int
 
@@ -32,17 +37,17 @@ func TrimSpaceLeft(err error) string {
 	return str[spaceIndex+1:]
 }
 
-// JPGtoPng は.jpgファイルから.pngファイルに変換する関数です。
+// JPGtoPng はJPGファイルから.pngファイルに変換する関数です。
 func JPGtoPng(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return err
+		return MyError(err.Error())
 	}
 	defer file.Close()
 
 	img, _, err := image.Decode(file)
 	if err != nil {
-		return err
+		return MyError(err.Error())
 	}
 
 	var pngFile string
@@ -54,18 +59,18 @@ func JPGtoPng(path string) error {
 	}
 	out, err := os.Create(pngFile)
 	if err != nil {
-		return err
+		return MyError(err.Error())
 	}
 
 	err = png.Encode(out, img)
 	if err != nil {
-		return err
+		return MyError(err.Error())
 	}
 
 	return nil
 }
 
-// FindJPG は.jpgファイルを探す関数です。
+// FindJPG はJPGファイルを探す関数です。
 func FindJPG(dirname string) {
 	err := filepath.Walk(dirname,
 		func(path string, info os.FileInfo, err error) error {
@@ -73,7 +78,8 @@ func FindJPG(dirname string) {
 				return err
 			}
 			if filepath.Ext(path) == ".jpg" || filepath.Ext(path) == ".jpeg" {
-				err = JPGtoPng(path)
+				// err = JPGtoPng(path)
+				err := JPGtoPng(path)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error: %s: %s\n", path, err.Error())
 					exitStatus = 1
@@ -90,10 +96,10 @@ func FindJPG(dirname string) {
 	}
 }
 
-// Convert はconvertのmainとなる関数です。
+// Convert はmypkgのmainとなる関数です。
 func Convert() {
 	flag.Parse()
-	if dirname := flag.Arg(0); dirname == "" {
+	if flag.Arg(0) == "" {
 		fmt.Fprintf(os.Stderr, "error: invalid argument\n")
 		os.Exit(1)
 	}
