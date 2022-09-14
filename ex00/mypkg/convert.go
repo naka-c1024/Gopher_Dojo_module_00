@@ -15,8 +15,8 @@ import (
 // MyError はユーザー定義型です。
 type MyError string
 
+// Error はMyError型のメソッドです。
 func (e MyError) Error() string {
-	// return string(e.Error())
 	return string(e)
 }
 
@@ -78,7 +78,6 @@ func FindJPG(dirname string) {
 				return err
 			}
 			if filepath.Ext(path) == ".jpg" || filepath.Ext(path) == ".jpeg" {
-				// err = JPGtoPng(path)
 				err := JPGtoPng(path)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error: %s: %s\n", path, err.Error())
