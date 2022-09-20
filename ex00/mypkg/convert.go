@@ -61,6 +61,7 @@ func JPGtoPng(path string) error {
 	if err != nil {
 		return MyError(err.Error())
 	}
+	defer out.Close()
 
 	err = png.Encode(out, img)
 	if err != nil {
